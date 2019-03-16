@@ -5,17 +5,18 @@ with open("README.md", "r") as readme:
 
 setup(
         name="bdf2ttf",
-        version="0.0.1",
+        version="0.0.2",
         author="Gabriel Holodak",
         description="Convert bitmap fonts into TTF format",
         long_description=long_description,
         long_description_content_type="text/markdown",
         packages=find_packages(),
-        install_requires=["bdflib"],
+        install_requires=["bdflib", "pyyaml"],
         python_requires='>=3',
         entry_points={
             "console_scripts": [
-                "bdf2ttf=bdf2ttf.convert:main"
+                "bdf2ttf=bdf2ttf.convert:main",
+                "yml2fea=bdf2ttf.feature:main"
                 ]
             },
         classifiers=[
