@@ -15,7 +15,7 @@ setup(
         python_requires='>=3',
         entry_points={
             "console_scripts": [
-                "bdf2ttf=bdf2ttf.commandline:main"
+                "bdf2ttf=bdf2ttf.convert:main"
                 ]
             },
         classifiers=[
