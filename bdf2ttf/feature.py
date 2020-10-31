@@ -15,7 +15,8 @@ Expected YAML syntax::
       # Full syntax
       - name: <Name of ligature glyph. .liga will be appended if missing.>
         glyphs: <Space-separated list of component glyphs.>
-        ignore: <Optional additional ignore rules, in full feature syntax.>
+        ignore: <Optional additional ignore rules, in full feature syntax.
+                Or, list of glyphs for each rule.>
       # Simplified syntax. Substituted name will be component glyph names, joined by
       # underscores, followed by .liga.
       - <list of component glyphs>
@@ -30,6 +31,9 @@ For example, this YAML::
       glyphs: equal greater
       ignore: |
         ignore sub less equal' greater;
+    - glyphs: less hypen
+      ignore:
+      - less' hypen greater
     - equal equal equal
 
 generates this feature file::
@@ -46,6 +50,14 @@ generates this feature file::
     sub LIG greater' by right_arrow.liga;
     sub  equal' greater by LIG;
     } right_arrow.liga;
+
+    lookup less_hyphen.liga {
+    ignore sub less less' hyphen;
+    ignore sub less' hyphen hyphen;
+    ignore sub less' hyphen greater;
+    sub LIG hyphen' by less_hyphen.liga;
+    sub  less' hyphen by LIG;
+    } less_hyphen.liga;
 
     lookup equal_equal_equal.liga {
     ignore sub equal equal' equal equal;
@@ -115,6 +127,16 @@ def generate_feature(stream, lookups):
 
     stream.write(b'\n} clig;\n')
 
+def read_ignores(ignores):
+    if isinstance(ignores, str):
+        return ignores.encode('ascii')
+    elif isinstance(ignores, list):
+        ignore_sequence = bytearray()
+        for ignore_rule in ignores:
+            ignore_sequence.extend(b'ignore sub %b;\n' % ignore_rule.encode('ascii'))
+
+        return bytes(ignore_sequence)
+
 def read_file(lig_file):
     languagesystems = []
     ligatures = []
@@ -143,7 +165,7 @@ def read_file(lig_file):
 
         new_lig = {
             'glyphs': glyphs.encode('ascii').split(b' '),
-            'ignore': ignore.encode('ascii'),
+            'ignore': read_ignores(ignore),
         }
         if name:
             name = name.encode('ascii')
@@ -163,7 +185,6 @@ def generate_feature_file(infile, outfile):
     languagesystems, ligatures = read_file(infile)
     infile.close()
 
-    print(ligatures)
     generate_languagesystems(outfile, languagesystems)
 
     generate_feature(outfile, ligatures)
