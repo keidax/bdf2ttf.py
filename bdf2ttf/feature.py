@@ -185,7 +185,6 @@ def generate_feature_file(infile, outfile):
     languagesystems, ligatures = read_file(infile)
     infile.close()
 
-    print(ligatures)
     generate_languagesystems(outfile, languagesystems)
 
     generate_feature(outfile, ligatures)
