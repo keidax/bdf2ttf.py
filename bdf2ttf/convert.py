@@ -25,10 +25,13 @@ def map_attributes(bdf, font):
     for attr_name in attr_map:
         attr_value = bdf[attr_name]
         if attr_value is not None:
+            if isinstance(attr_value, bytes):
+                attr_value = attr_value.decode()
+
             setattr(font, attr_map[attr_name], attr_value)
 
     fontname = compute_fontname(bdf)
-    font.fontname = fontname
+    font.fontname = fontname.decode()
 
 
 # Build the final font name
