@@ -7,7 +7,7 @@ with open("README.md", "r") as readme:
 
 setup(
         name="bdf2ttf",
-        version="0.0.3",
+        version="0.0.5",
         author="Gabriel Holodak",
         description="Convert bitmap fonts into TTF format",
         long_description=long_description,
