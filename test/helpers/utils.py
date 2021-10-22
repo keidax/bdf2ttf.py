@@ -5,4 +5,5 @@
 # https://docs.microsoft.com/en-us/typography/opentype/spec/name#name-ids
 def assert_font_names(font, name_mapping):
     for name_id, expected_value in name_mapping.items():
-        assert font["name"].getDebugName(name_id) == expected_value
+        name_value = font["name"].getDebugName(name_id)
+        assert name_value == expected_value, f"wrong value for name entry {name_id}"

@@ -80,8 +80,8 @@ def map_attributes(bdf, font):
     if weight:
         font.weight = weight
 
-    # TODO: apply extra names with appendSFNTName
-    # TODO: style (Name ID 2)
+    # Set the style name record directly
+    font.appendSFNTName(0x409, 2, style)
 
 
 def generate_family(base_family, width, extra_style):
