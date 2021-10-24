@@ -1,12 +1,6 @@
-from pathlib import Path
-from subprocess import run
-
-from fontTools.ttLib.ttFont import TTFont
-
 from helpers import utils
 
 def test_with_no_names(convert_str):
-    in_file = "test/names/noname.bdf"
     font = convert_str("""
         STARTFONT 2.1
         SIZE 1 72 72

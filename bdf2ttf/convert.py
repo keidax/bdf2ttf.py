@@ -37,6 +37,20 @@ def map_attributes(bdf, font):
     if b'FONT_VERSION' in bdf:
         font.version = bdf[b'FONT_VERSION'].decode()
 
+    if b'FACE_NAME' in bdf:
+        # bdflib will assign the FONT property to FACE_NAME, even if it's an
+        # XLFD string. We can detect this and assign other properties based on
+        # the XLFD name contents.
+        face_name_property = bdf[b'FACE_NAME'].decode()
+        xlfd_fields = parse_xlfd_name_fields(face_name_property)
+
+        if xlfd_fields:
+            _, base_family, weight, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
+        else:
+            # Assume that FACE_NAME was actually specified, so we should
+            # consider it as the canonical human name.
+            human_name = face_name_property
+
     if b'FAMILY_NAME' in bdf:
         base_family = bdf[b'FAMILY_NAME'].decode()
 
@@ -51,12 +65,6 @@ def map_attributes(bdf, font):
 
     if b'ADD_STYLE_NAME' in bdf:
         extra_style = bdf[b'ADD_STYLE_NAME'].decode()
-
-    if b'FACE_NAME' in bdf:
-        # TODO: bdflib will assign the FONT property to FACE_NAME, even if it's
-        # an XLFD string. Probably we should detect this, or even parse the
-        # XLFD format.
-        human_name = bdf[b'FACE_NAME'].decode()
 
     if b'FONT_NAME' in bdf:
         postscript_name = bdf[b'FONT_NAME'].decode()
@@ -121,6 +129,19 @@ def generate_style(slant_code, weight):
         return slant_name
     else:
         return "Regular"
+
+# If the string is a valid XLFD name, return a list of the fourteen XLFD properties.
+# Otherwise, return None.
+# See the XLFD specification for details:
+# https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/XLFD/xlfd.html#fontname
+def parse_xlfd_name_fields(name):
+    if not name.startswith("-"):
+        return None
+
+    if name.count("-") != 14:
+        return None
+
+    return name.split("-")[1:]
 
 
 def trace_outlines(bdf_font, outline_font, pixel_size):
