@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "bdf2ttf"
+version = "0.0.5"
+description = "Convert bitmap fonts into TTF format"
+readme = "README.md"
+authors = ["Gabriel Holodak <gthepiper@gmail.com>"]
+license = "GPL-3.0-only"
+
+[tool.poetry.scripts]
+bdf2ttf = "bdf2ttf.convert:main"
+yml2fea = "bdf2ttf.feature:main"
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+bdflib = "^1.1.3"
+PyYAML = "^6.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+fonttools = "^4.27.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

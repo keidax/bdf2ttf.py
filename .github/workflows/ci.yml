@@ -1,0 +1,30 @@
+name: CI
+on: [push]
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install fontforge
+        run: |
+          sudo apt-get install -y python3-fontforge
+          dpkg -L python3-fontforge
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.1.11
+
+      - name: Install dependencies
+        run: |
+          pip list
+          poetry install --no-interaction
+
+      - name: Run tests
+        run: |
+          # We need to make sure the fontforge module is visible
+          export PYTHONPATH=$PYTHONPATH:/usr/lib/python3/dist-packages
+          poetry run pytest

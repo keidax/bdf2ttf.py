@@ -1,9 +1,18 @@
 """Convert bitmap fonts into TTF format."""
 
 import argparse
+import re
 import sys
 
+import bdflib.model
 import bdflib.reader
+
+try:
+    # bdflib will ignore the FACE_NAME property, which we don't want
+    bdflib.model.IGNORABLE_PROPERTIES.remove(b'FACE_NAME')
+except ValueError:
+    pass
+
 try:
     import fontforge
 except ImportError as e:
@@ -14,37 +23,125 @@ except ImportError as e:
 
 # Map BDF properties to fontforge settings
 def map_attributes(bdf, font):
-    attr_map = {
-        b'FACE_NAME': "fullname",
-        b'FAMILY_NAME': "familyname",
-        b'WEIGHT_NAME': "weight",
-        b'FONT_VERSION': "version",
-        b'COPYRIGHT': "copyright",
-    }
+    base_family = None
+    slant_code = None
+    weight = None
+    width = None
+    extra_style = None
+    human_name = None
+    postscript_name = None
 
-    for attr_name in attr_map:
-        attr_value = bdf[attr_name]
-        if attr_value is not None:
-            if isinstance(attr_value, bytes):
-                attr_value = attr_value.decode()
+    if b'COPYRIGHT' in bdf:
+        font.copyright = bdf[b'COPYRIGHT'].decode()
 
-            setattr(font, attr_map[attr_name], attr_value)
+    if b'FONT_VERSION' in bdf:
+        font.version = bdf[b'FONT_VERSION'].decode()
 
-    fontname = compute_fontname(bdf)
-    font.fontname = fontname.decode()
+    if b'FACE_NAME' in bdf:
+        # bdflib will assign the FONT property to FACE_NAME, even if it's an
+        # XLFD string. We can detect this and assign other properties based on
+        # the XLFD name contents.
+        face_name_property = bdf[b'FACE_NAME'].decode()
+        xlfd_fields = parse_xlfd_name_fields(face_name_property)
+
+        if xlfd_fields:
+            _, base_family, weight, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
+        else:
+            # Assume that FACE_NAME was actually specified, so we should
+            # consider it as the canonical human name.
+            human_name = face_name_property
+
+    if b'FAMILY_NAME' in bdf:
+        base_family = bdf[b'FAMILY_NAME'].decode()
+
+    if b'WEIGHT_NAME' in bdf:
+        weight = bdf[b'WEIGHT_NAME'].decode()
+
+    if b'SLANT' in bdf:
+        slant_code = bdf[b'SLANT'].decode()
+
+    if b'SETWIDTH_NAME' in bdf:
+        width = bdf[b'SETWIDTH_NAME'].decode()
+
+    if b'ADD_STYLE_NAME' in bdf:
+        extra_style = bdf[b'ADD_STYLE_NAME'].decode()
+
+    if b'FONT_NAME' in bdf:
+        postscript_name = bdf[b'FONT_NAME'].decode()
+
+    family = generate_family(base_family, width, extra_style)
+    style = generate_style(slant_code, weight)
+
+    if not human_name:
+        if style == "Regular":
+            human_name = family
+        else:
+            human_name = f"{family} {style}"
+
+    if not postscript_name:
+        postscript_name = f"{family}-{style}".replace(" ", "")
+
+    font.fullname = human_name
+    font.fontname = postscript_name
+    font.familyname = family
+
+    if weight:
+        font.weight = weight
+
+    # Set the style name record directly
+    font.appendSFNTName(0x409, 2, style)
 
 
-# Build the final font name
-def compute_fontname(bdf):
-    return (bdf[b'FAMILY_NAME'] + bdf[b'WEIGHT_NAME']).replace(b' ', b'')
+def generate_family(base_family, width, extra_style):
+    regular_widths = {"medium", "normal", "regular"}
+
+    family = "Unknown"
+
+    if base_family:
+        family = base_family
+
+    if width and width.lower() not in regular_widths:
+        family += f" {width}"
+
+    if extra_style:
+        family += f" {extra_style}"
+
+    return family
 
 
-# Build the final file name
-def compute_filename(bdf):
-    return "{}-{}.ttf".format(
-        compute_fontname(bdf).decode(),
-        bdf[b'FONT_VERSION'].decode()
-    )
+def generate_style(slant_code, weight):
+    regular_weights = {"medium", "normal", "regular"}
+    slants = {"I": "Italic", "O": "Oblique", "RI": "Reverse Italic", "RO": "Reverse Oblique"}
+
+    weight_name = None
+    if weight and weight.lower() not in regular_weights:
+        weight_name = weight
+
+    slant_name = None
+    if slant_code and slant_code in slants:
+        slant_name = slants[slant_code]
+
+    if weight_name and slant_name:
+        return f"{weight_name} {slant_name}"
+    elif weight_name:
+        return weight_name
+    elif slant_name:
+        return slant_name
+    else:
+        return "Regular"
+
+# If the string is a valid XLFD name, return a list of the fourteen XLFD properties.
+# Otherwise, return None.
+# See the XLFD specification for details:
+# https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/XLFD/xlfd.html#fontname
+def parse_xlfd_name_fields(name):
+    if not name.startswith("-"):
+        return None
+
+    if name.count("-") != 14:
+        return None
+
+    return name.split("-")[1:]
 
 
 def trace_outlines(bdf_font, outline_font, pixel_size):
@@ -119,7 +216,7 @@ def convert_bdf(infile, outfile=None, feature_file=None):
     if outfile != None:
         font_filename = outfile
     else:
-        font_filename = compute_filename(bdf)
+        font_filename = f"{font.fontname}.ttf"
 
     # Output the final font
     font.generate(font_filename)
