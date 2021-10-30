@@ -173,9 +173,9 @@ def trace_outline(bdf_glyph, outline_glyph, pixel_size):
 
                 # Draw it
                 pen.moveTo((x1, y1))
-                pen.lineTo((x2, y1))
-                pen.lineTo((x2, y2))
                 pen.lineTo((x1, y2))
+                pen.lineTo((x2, y2))
+                pen.lineTo((x2, y1))
                 pen.closePath()
 
 
