@@ -4,8 +4,24 @@ import argparse
 import re
 import sys
 
+from collections import OrderedDict
+from enum import IntEnum
+
 import bdflib.model
 import bdflib.reader
+
+from fontTools.fontBuilder import FontBuilder
+from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.ttLib.removeOverlaps import removeOverlaps
+
+class NameID(IntEnum):
+    COPYRIGHT = 0
+    FONT_FAMILY = 1
+    FONT_SUBFAMILY = 2
+    UNIQUE_IDENTIFIER = 3
+    FULL_HUMAN_NAME = 4
+    VERSION = 5
+    POSTSCRIPT_NAME = 6
 
 try:
     # bdflib will ignore the FACE_NAME property, which we don't want
@@ -13,16 +29,8 @@ try:
 except ValueError:
     pass
 
-try:
-    import fontforge
-except ImportError as e:
-    print("\033[1;31mCould not import fontforge!\nMake sure the FontForge"
-            " Python extension is properly installed.\033[0m",
-            file=sys.stderr)
-    raise e
-
-# Map BDF properties to fontforge settings
-def map_attributes(bdf, font):
+# Map BDF properties to OpenType names
+def map_attributes(bdf):
     base_family = None
     slant_code = None
     weight = None
@@ -31,11 +39,13 @@ def map_attributes(bdf, font):
     human_name = None
     postscript_name = None
 
+    names = {}
+
     if b'COPYRIGHT' in bdf:
-        font.copyright = bdf[b'COPYRIGHT'].decode()
+        names[NameID.COPYRIGHT] = bdf[b'COPYRIGHT'].decode()
 
     if b'FONT_VERSION' in bdf:
-        font.version = bdf[b'FONT_VERSION'].decode()
+        names[NameID.VERSION] = bdf[b'FONT_VERSION'].decode()
 
     if b'FACE_NAME' in bdf:
         # bdflib will assign the FONT property to FACE_NAME, even if it's an
@@ -81,15 +91,16 @@ def map_attributes(bdf, font):
     if not postscript_name:
         postscript_name = f"{family}-{style}".replace(" ", "")
 
-    font.fullname = human_name
-    font.fontname = postscript_name
-    font.familyname = family
+    names[NameID.FULL_HUMAN_NAME] = human_name
+    names[NameID.POSTSCRIPT_NAME] = postscript_name
+    names[NameID.FONT_FAMILY] = family
+    names[NameID.FONT_SUBFAMILY] = style
 
-    if weight:
-        font.weight = weight
+    # TODO: set weight
 
-    # Set the style name record directly
-    font.appendSFNTName(0x409, 2, style)
+    # if weight:
+    #     font.weight = weight
+    return names
 
 
 def generate_family(base_family, width, extra_style):
@@ -144,22 +155,24 @@ def parse_xlfd_name_fields(name):
     return name.split("-")[1:]
 
 
-def trace_outlines(bdf_font, outline_font, pixel_size):
+def build_glyphs(bdf_font, pixel_size):
+    glyphs = OrderedDict()
+
     for bdf_glyph in bdf_font.glyphs:
-        # Add a new outline glyph
-        outline_glyph = outline_font.createChar(bdf_glyph.codepoint,
-                bdf_glyph.name.decode())
+        codepoint = bdf_glyph.codepoint
+        name = bdf_glyph.name.decode()
+        advance_width = bdf_glyph.advance * pixel_size
+        glyph = build_tt_glyph(bdf_glyph, pixel_size)
 
-        trace_outline(bdf_glyph, outline_glyph, pixel_size)
+        glyphs[name] = (glyph, codepoint, advance_width)
 
-        # The fontforge glyphs seem to start as squares, we want them to be
-        # proportional. For some reason, this has to be set *after* we do the
-        # drawing.
-        outline_glyph.width = bdf_glyph.advance * pixel_size
+        # TODO: handle special names?
+
+    return glyphs
 
 
-def trace_outline(bdf_glyph, outline_glyph, pixel_size):
-    pen = outline_glyph.glyphPen()
+def build_tt_glyph(bdf_glyph, pixel_size):
+    pen = TTGlyphPen(None)
 
     # Using the example code from bdflib:
     for x in range(bdf_glyph.bbW):
@@ -178,12 +191,11 @@ def trace_outline(bdf_glyph, outline_glyph, pixel_size):
                 pen.lineTo((x2, y1))
                 pen.closePath()
 
+    return pen.glyph()
+
 
 def convert_bdf(infile, outfile=None, feature_file=None):
-    font = fontforge.font()
     bdf = bdflib.reader.read_bdf(infile)
-
-    map_attributes(bdf, font)
 
     # This *should* be the actual vertical size of our font, in pixels
     font_size = int(round(
@@ -198,28 +210,68 @@ def convert_bdf(infile, outfile=None, feature_file=None):
     pixel_size = int(1024 / font_size)
     em_size = font_size * pixel_size
 
-    # Apply metrics to the font
-    font.ascent = ascent * pixel_size
-    font.descent = descent * pixel_size
-    assert font.em == em_size
+    fb = FontBuilder(unitsPerEm=em_size)
 
-    trace_outlines(bdf, font, pixel_size)
+    glyphs = build_glyphs(bdf_font=bdf, pixel_size=pixel_size)
 
-    if feature_file != None:
-        font.mergeFeature(feature_file.name)
+    glyph_order = list(glyphs.keys())
+    fb.setupGlyphOrder(glyph_order)
+
+    char_map = dict()
+    for name, glyph_tuple in glyphs.items():
+        codepoint = glyph_tuple[1]
+        if codepoint >= 0:
+            char_map[codepoint] = name
+    fb.setupCharacterMap(char_map)
+
+    glyph_map = dict()
+    for name, glyph_tuple in glyphs.items():
+        glyph = glyph_tuple[0]
+        glyph_map[name] = glyph
+    fb.setupGlyf(glyph_map)
+
+    metrics = {}
+    glyf_table = fb.font["glyf"]
+    for name, glyph_tuple in glyphs.items():
+        advance_width = glyph_tuple[2]
+        metrics[name] = (advance_width, glyf_table[name].xMin)
+    fb.setupHorizontalMetrics(metrics)
+
+    fb.setupHorizontalHeader(ascent=ascent * pixel_size, descent=(-descent * pixel_size))
+
+    names = map_attributes(bdf)
+
+    version_string = "1.0"
+    version_float = 1.0
+    if NameID.VERSION in names:
+        version_string = names[NameID.VERSION]
+        try:
+            version_float = float(version_string)
+        except ValueError:
+            # TODO: warning
+            pass
+
+    names[NameID.VERSION] = f"Version {version_string}"
+    fb.setupNameTable(names)
+    fb.updateHead(fontRevision=version_float)
+
+    fb.setupOS2()
+    fb.setupPost()
 
     # Merge adjacent pixel squares and reduce extra points
-    font.selection.all()
-    font.removeOverlap()
-    font.simplify()
+    removeOverlaps(fb.font)
+
+    # if feature_file != None:
+    #     font.mergeFeature(feature_file.name)
 
     if outfile != None:
         font_filename = outfile
     else:
-        font_filename = f"{font.fontname}.ttf"
+        # font_filename = f"{font.fontname}.ttf"
+        font_filename = f"{'asdf'}.ttf"
 
     # Output the final font
-    font.generate(font_filename)
+    fb.save(font_filename)
 
 
 def main():
