@@ -11,13 +11,13 @@ bdf2ttf = "bdf2ttf.convert:main"
 yml2fea = "bdf2ttf.feature:main"
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = "^3.7"
 bdflib = "^1.1.3"
 PyYAML = "^6.0"
+fonttools = {extras = ["pathops"], version = "^4.27.1"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
-fonttools = "^4.27.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
