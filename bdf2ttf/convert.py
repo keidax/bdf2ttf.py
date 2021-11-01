@@ -3,6 +3,7 @@
 import argparse
 import re
 import sys
+import time
 
 from collections import OrderedDict
 from enum import IntEnum
@@ -83,20 +84,7 @@ class Font:
             xlfd_fields = self.parse_xlfd_name_fields(face_name_property)
 
             if xlfd_fields:
-                _,
-                base_family,
-                weight,
-                slant_code,
-                width,
-                extra_style,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _ = xlfd_fields
+                _, base_family, weight, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
             else:
                 # Assume that FACE_NAME was actually specified, so we should
                 # consider it as the canonical human name.
@@ -131,8 +119,6 @@ class Font:
 
         if not self.postscript_name:
             self.postscript_name = f"{self.family}-{self.style}".replace(" ", "")
-
-        # TODO: generate unique name
 
         # if weight:
         #     font.weight = weight
@@ -201,6 +187,9 @@ class Font:
     def build_glyphs(self, bdf_font):
         self.glyphs = OrderedDict()
 
+        a_to_z_widths = 0
+        a_to_z_count = 0
+
         for bdf_glyph in bdf_font.glyphs:
             codepoint = bdf_glyph.codepoint
             name = bdf_glyph.name.decode()
@@ -209,7 +198,28 @@ class Font:
 
             self.glyphs[name] = (glyph, codepoint, advance_width)
 
-        # TODO: handle special names?
+            if ord("A") <= codepoint <= ord("Z"):
+                a_to_z_widths += advance_width
+                a_to_z_count += 1
+
+        if ".notdef" not in self.glyphs:
+            # TODO: try to provide a default shape?
+            notdef_glyph = TTGlyphPen(None).glyph()
+
+            # Try to set .notdef's advance width to the average.
+            # Otherwise, just make it a square.
+
+            if a_to_z_count > 0:
+                advance_width = int(a_to_z_widths / a_to_z_count)
+            else:
+                advance_width = self.em_size
+
+            self.glyphs[".notdef"] = (notdef_glyph, -1, advance_width)
+
+        # Make sure .notdef is the first glyph
+        self.glyphs.move_to_end(".notdef", last=False)
+
+        # TODO: handle other special glyphs: .null, CR, space?
 
 
     def build_tt_glyph(self, bdf_glyph):
@@ -271,7 +281,8 @@ class Font:
             NameID.FONT_FAMILY : self.family,
             NameID.FONT_SUBFAMILY : self.style,
             NameID.POSTSCRIPT_NAME : self.postscript_name,
-            NameID.FULL_HUMAN_NAME : self.human_name
+            NameID.FULL_HUMAN_NAME : self.human_name,
+            NameID.UNIQUE_IDENTIFIER : f"bdf2ttf : {self.postscript_name} : {time.strftime('%Y-%m-%d')}",
         }
 
         if self.copyright:
