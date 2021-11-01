@@ -38,9 +38,9 @@ def test_with_simple_glyph(convert_str):
 
     # Glyph is drawn as a rectangle in clockwise order
     assert pen.value == [
-        ('moveTo', ((682, 1023),)),
-        ('lineTo', ((682, 0),)),
-        ('lineTo', ((341, 0),)),
+        ('moveTo', ((341, 0),)),
         ('lineTo', ((341, 1023),)),
+        ('lineTo', ((682, 1023),)),
+        ('lineTo', ((682, 0),)),
         ('closePath', ())
     ]

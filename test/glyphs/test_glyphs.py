@@ -24,8 +24,7 @@ def test_with_one_glyph(convert_str):
         ENDFONT
         """)
 
-    # First 3 glyphs are defaulted by FontForge
-    assert font.getGlyphOrder() == [".notdef", ".null", "nonmarkingreturn", "bar"]
+    assert font.getGlyphOrder() == [".notdef", "bar"]
 
     glyphs = font.getGlyphSet()
     bar = glyphs["bar"]
@@ -69,7 +68,7 @@ def test_with_unencoded_glyphs(convert_str):
         """)
 
     # First 3 glyphs are defaulted by FontForge
-    assert font.getGlyphOrder() == [".notdef", ".null", "nonmarkingreturn", "a", "a.alt"]
+    assert font.getGlyphOrder() == [".notdef", "a", "a.alt"]
 
     # Unencoded glyphs don't have codepoints
     name_to_codepoints = font["cmap"].buildReversed()

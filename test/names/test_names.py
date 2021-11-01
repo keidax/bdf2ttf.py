@@ -9,7 +9,13 @@ def test_with_no_names(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
@@ -30,7 +36,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(plain_font, {
@@ -51,7 +63,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(regular_font, {
@@ -71,7 +89,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(bold_font, {
@@ -92,7 +116,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(italic_font, {
@@ -113,7 +143,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(bold_italic_font, {
@@ -135,7 +171,13 @@ def test_with_full_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(extra_styles_font, {
@@ -158,7 +200,13 @@ def test_with_full_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(all_styles_font, {

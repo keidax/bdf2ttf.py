@@ -11,7 +11,13 @@ def test_with_empty_xlfd_name(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
@@ -32,7 +38,13 @@ def test_with_only_xlfd_name(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
@@ -56,7 +68,13 @@ def test_with_xlfd_name_and_property_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
@@ -82,7 +100,13 @@ def test_with_xlfd_name_and_all_properties(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
