@@ -28,6 +28,37 @@ def test_with_empty_xlfd_name(convert_str):
         6: "Unknown-Regular",
     })
 
+def test_with_empty_xlfd_name_and_property_styles(convert_str):
+    font = convert_str("""
+        STARTFONT 2.1
+        FONT --------------
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name 2"
+        RELATIVE_WEIGHT 70
+        SLANT "I"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+
+    utils.assert_font_names(font, {
+        1: "Family Name 2",
+        2: "Bold Italic",
+        4: "Family Name 2 Bold Italic",
+        6: "FamilyName2-BoldItalic",
+    })
+
+
 def test_with_only_xlfd_name(convert_str):
     font = convert_str("""
         STARTFONT 2.1
@@ -56,7 +87,7 @@ def test_with_only_xlfd_name(convert_str):
     })
 
 def test_with_xlfd_name_and_property_styles(convert_str):
-    font = convert_str("""
+    regular_font = convert_str("""
         STARTFONT 2.1
         FONT -misc-Family Name-Bold-I-Normal--1-10-72-72-C-10-ISO10646-1
         SIZE 1 72 72
@@ -78,12 +109,42 @@ def test_with_xlfd_name_and_property_styles(convert_str):
         ENDFONT
         """)
 
-    utils.assert_font_names(font, {
+    utils.assert_font_names(regular_font, {
         1: "Family Name 2",
         2: "Regular",
         4: "Family Name 2",
         6: "FamilyName2-Regular",
     })
+
+    font_with_bold_relative_weight = convert_str("""
+        STARTFONT 2.1
+        FONT -misc-Family Name-Light-I-Normal--1-10-72-72-C-10-ISO10646-1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name 2"
+        RELATIVE_WEIGHT 70
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+
+    utils.assert_font_names(font_with_bold_relative_weight, {
+        1: "Family Name 2",
+        2: "Light",
+        4: "Family Name 2 Light",
+        6: "FamilyName2-Light",
+    })
+
 
 def test_with_xlfd_name_and_all_properties(convert_str):
     font = convert_str("""

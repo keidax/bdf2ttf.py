@@ -215,3 +215,168 @@ def test_with_full_styles(convert_str):
         4: "Family Name Condensed Extra Semibold Reverse Oblique",
         6: "FamilyNameCondensedExtra-SemiboldReverseOblique",
     })
+
+def test_numeric_weight_names(convert_str):
+    relative_weight_0 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 0
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_0, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_20 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 20
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_20, {
+        1: "Family Name",
+        2: "Extra Light",
+        4: "Family Name Extra Light",
+        6: "FamilyName-ExtraLight",
+    })
+
+    relative_weight_50 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 50
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_50, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_70 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 70
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_70, {
+        1: "Family Name",
+        2: "Bold",
+        4: "Family Name Bold",
+        6: "FamilyName-Bold",
+    })
+
+    relative_weight_invalid = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 77
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_invalid, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_and_weight_name = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 6
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 10
+        WEIGHT_NAME "Heavy"
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+
+    utils.assert_font_names(relative_weight_and_weight_name, {
+        1: "Family Name",
+        2: "Heavy",
+        4: "Family Name Heavy",
+        6: "FamilyName-Heavy",
+    })

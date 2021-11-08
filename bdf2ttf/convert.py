@@ -63,7 +63,8 @@ class Font:
         extra_style = None
         slant_code = None
         width = None
-        weight = None
+        weight_name = None
+        relative_weight = None
 
         if b'COPYRIGHT' in bdf_font:
             self.copyright = bdf_font[b'COPYRIGHT'].decode()
@@ -84,7 +85,7 @@ class Font:
             xlfd_fields = self.parse_xlfd_name_fields(face_name_property)
 
             if xlfd_fields:
-                _, base_family, weight, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
+                _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
             else:
                 # Assume that FACE_NAME was actually specified, so we should
                 # consider it as the canonical human name.
@@ -94,7 +95,10 @@ class Font:
             base_family = bdf_font[b'FAMILY_NAME'].decode()
 
         if b'WEIGHT_NAME' in bdf_font:
-            weight = bdf_font[b'WEIGHT_NAME'].decode()
+            weight_name = bdf_font[b'WEIGHT_NAME'].decode()
+
+        if b'RELATIVE_WEIGHT' in bdf_font:
+            relative_weight = int(bdf_font[b'RELATIVE_WEIGHT'])
 
         if b'SLANT' in bdf_font:
             slant_code = bdf_font[b'SLANT'].decode()
@@ -109,7 +113,7 @@ class Font:
             self.postscript_name = bdf_font[b'FONT_NAME'].decode()
 
         self.family = self.generate_family(base_family, width, extra_style)
-        self.style = self.generate_style(slant_code, weight)
+        self.style = self.generate_style(slant_code, weight_name, relative_weight)
 
         if not self.human_name:
             if self.style == "Regular":
@@ -119,9 +123,6 @@ class Font:
 
         if not self.postscript_name:
             self.postscript_name = f"{self.family}-{self.style}".replace(" ", "")
-
-        # if weight:
-        #     font.weight = weight
 
 
     def generate_family(self, base_family, width, extra_style):
@@ -141,15 +142,27 @@ class Font:
         return family
 
 
-    def generate_style(self, slant_code, weight):
-        regular_weights = {"medium", "normal", "regular"}
+    def generate_style(self, slant_code, weight_name, relative_weight):
+        style_weight_name = self.calculate_weight_name(weight_name, relative_weight)
+        style_slant_name = self.calculate_slant_name(slant_code)
+
+        self.is_regular = False
+        if style_weight_name and style_slant_name:
+            return f"{style_weight_name} {style_slant_name}"
+        elif style_weight_name:
+            return style_weight_name
+        elif style_slant_name:
+            return style_slant_name
+        else:
+            self.is_regular = True
+            return "Regular"
+
+
+    # Calculate the slant of the font.
+    # Return an appropriate slant name for the font style.
+    # TODO: we could also come up with the italic angle for the font
+    def calculate_slant_name(self, slant_code):
         slants = {"I": "Italic", "O": "Oblique", "RI": "Reverse Italic", "RO": "Reverse Oblique"}
-
-        weight_name = None
-        if weight and weight.lower() not in regular_weights:
-            weight_name = weight
-
-        # TODO: set numeric weight and bold flag
 
         slant_name = None
         if slant_code and slant_code in slants:
@@ -158,17 +171,75 @@ class Font:
         else:
             self.is_italic = False
 
-        self.is_regular = False
+        return slant_name
 
-        if weight_name and slant_name:
-            return f"{weight_name} {slant_name}"
-        elif weight_name:
-            return weight_name
-        elif slant_name:
-            return slant_name
+
+    # Calculate a numeric weight and a weight name based on the inputs.
+    # Return an appropriate weight name for the font style.
+    def calculate_weight_name(self, weight_name, relative_weight):
+        weight_name_mapping = {
+            ("thin", "extrathin", "ultrathin", "hairline"): 100,
+            ("extralight", "ultralight"): 200,
+            ("light", "semilight", "demilight"): 300,
+            ("regular", "normal", "book"): 400,
+            ("medium",): 500,
+            ("semibold", "demibold"): 600,
+            ("bold",): 700,
+            ("extrabold", "ultrabold"): 800,
+            ("black", "extrablack", "ultrablack", "heavy") : 900,
+        }
+        relative_weight_mapping = {
+            10: 100,
+            20: 200,
+            30: 300,
+            40: 300,
+            50: 400,
+            60: 600,
+            70: 700,
+            80: 800,
+            90: 900
+        }
+        canonical_weight_names = {
+            100: "Thin",
+            200: "Extra Light",
+            300: "Light",
+            400: "Regular",
+            500: "Medium",
+            600: "Semi Bold",
+            700: "Bold",
+            800: "Extra Bold",
+            900: "Black",
+        }
+        regular_weight_names = {"medium", "normal", "regular"}
+
+        self.weight_value = None
+        if weight_name:
+            for names, value in weight_name_mapping.items():
+                if weight_name.lower().replace(" ", "").replace("-", "") in names:
+                    self.weight_value = value
+        elif relative_weight and relative_weight in relative_weight_mapping:
+            self.weight_value = relative_weight_mapping[relative_weight]
+
+        if not self.weight_value:
+            self.weight_value = 400
+
+        if self.weight_value > 600:
+            self.is_bold = True
         else:
-            self.is_regular = True
-            return "Regular"
+            self.is_bold = False
+
+        self.weight_name = None
+        if weight_name:
+            self.weight_name = weight_name
+        else:
+            self.weight_name = canonical_weight_names[self.weight_value]
+
+        if self.weight_name.lower() in regular_weight_names:
+            # The weight is "regular", so it should not be part of the font's style name.
+            return None
+        else:
+            return self.weight_name
+
 
     # If the string is a valid XLFD name, return a list of the fourteen XLFD properties.
     # Otherwise, return None.
@@ -181,7 +252,8 @@ class Font:
         if name.count("-") != 14:
             return None
 
-        return name.split("-")[1:]
+        fields = name.split("-")[1:]
+        return fields
 
 
     def build_glyphs(self, bdf_font):
@@ -245,6 +317,28 @@ class Font:
         return pen.glyph()
 
 
+    def mac_style(self):
+        mac_style = 0
+        if self.is_bold:
+            mac_style |= 1 << 0
+        if self.is_italic:
+            mac_style |= 1 << 1
+
+        return mac_style
+
+
+    def fs_selection(self):
+        fs_selection = 0
+        if self.is_italic:
+            fs_selection |= 1 << 0
+        if self.is_bold:
+            fs_selection |= 1 << 5
+        if self.is_regular:
+            fs_selection |= 1 << 6
+
+        return fs_selection
+
+
     def opentype_font(self):
         fb = FontBuilder(unitsPerEm=self.em_size)
 
@@ -273,8 +367,11 @@ class Font:
         fb.setupHorizontalHeader(ascent=self.ascent * self.pixel_size, descent=(-self.descent * self.pixel_size))
         # TODO: lineGap
 
-        fb.updateHead(fontRevision=self.version)
-        # TODO: also update macStyle
+        fb.updateHead(
+            fontRevision=self.version,
+            lowestRecPPEM=self.font_size,
+            macStyle=self.mac_style(),
+        )
 
         names = {
             NameID.VERSION : f"Version {self.version:.3f}",
@@ -290,14 +387,15 @@ class Font:
 
         fb.setupNameTable(names)
 
-        # TODO: set fsType = 0
-        # TODO: set usWeightClass
         # TODO: strikeout size & position
         # TODO: set achVendorID = None
-        # TODO: set fsSelection along with macStyle
         # TODO: set ascender values here too
         # TODO: set x height and cap height
-        fb.setupOS2()
+        fb.setupOS2(
+            fsType=0,
+            usWeightClass=self.weight_value,
+            fsSelection=self.fs_selection(),
+        )
 
         # TODO: set underline values
         # TODO: set isFixedPitch?
