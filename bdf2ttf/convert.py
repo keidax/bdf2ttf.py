@@ -47,6 +47,15 @@ class Font:
         self.descent : int = int(bdf_font[b'FONT_DESCENT'])
         assert (self.ascent + self.descent) == self.font_size
 
+        self.x_height : int = 0
+        self.cap_height : int = 0
+
+        if b'X_HEIGHT' in bdf_font:
+            self.x_height = int(bdf_font[b'X_HEIGHT'])
+
+        if b'CAP_HEIGHT' in bdf_font:
+            self.cap_height = int(bdf_font[b'CAP_HEIGHT'])
+
         # pixel_size is the distance between pseudo-pixels in our outline font, in em
         # coordinates. Make sure it divides evenly into final em size.
         self.pixel_size : int = int(1024 / self.font_size)
@@ -336,6 +345,9 @@ class Font:
         if self.is_regular:
             fs_selection |= 1 << 6
 
+        # Should always be set for new fonts
+        fs_selection |= 1 << 7
+
         return fs_selection
 
 
@@ -364,8 +376,15 @@ class Font:
             metrics[name] = (advance_width, glyf_table[name].xMin)
         fb.setupHorizontalMetrics(metrics)
 
-        fb.setupHorizontalHeader(ascent=self.ascent * self.pixel_size, descent=(-self.descent * self.pixel_size))
-        # TODO: lineGap
+        font_ascent = self.ascent * self.pixel_size
+        font_descent = -self.descent * self.pixel_size # specified as a negative value
+        line_gap = 0
+
+        fb.setupHorizontalHeader(
+            ascent=font_ascent,
+            descent=font_descent,
+            lineGap=line_gap,
+        )
 
         fb.updateHead(
             fontRevision=self.version,
@@ -387,14 +406,28 @@ class Font:
 
         fb.setupNameTable(names)
 
+        x_height = self.x_height * self.pixel_size
+        cap_height = self.cap_height * self.pixel_size
+
         # TODO: strikeout size & position
         # TODO: set achVendorID = None
-        # TODO: set ascender values here too
-        # TODO: set x height and cap height
+        # TODO: set win metrics to max bounding box?
         fb.setupOS2(
+            version=4,
+
             fsType=0,
             usWeightClass=self.weight_value,
             fsSelection=self.fs_selection(),
+
+            sTypoAscender=font_ascent,
+            sTypoDescender=font_descent,
+            sTypoLineGap=line_gap,
+
+            usWinAscent=font_ascent,
+            usWinDescent=-font_descent,
+
+            sxHeight=x_height,
+            sCapHeight=cap_height,
         )
 
         # TODO: set underline values
