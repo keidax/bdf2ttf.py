@@ -15,6 +15,27 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib.removeOverlaps import removeOverlaps
 
+
+# bdflib will ignore the FACE_NAME property, which we don't want
+bdflib.model.IGNORABLE_PROPERTIES.remove(b'FACE_NAME')
+
+# Monkeypatch the bdflib Font class, to support both the original name
+# (specified with the FONT keyword) and the FACE_NAME property.
+def bdflib_font_init(self, name, ptSize, xdpi, ydpi):
+    self.original_font_name = bytes(name)
+    self.properties = {
+            b"FACE_NAME": bytes(name),
+            b"POINT_SIZE": ptSize,
+            b"RESOLUTION_X": xdpi,
+            b"RESOLUTION_Y": ydpi,
+        }
+    self.glyphs = []
+    self.glyphs_by_codepoint = {}
+    self.comments = []
+
+bdflib.model.Font.__init__ = bdflib_font_init
+
+
 class NameID(IntEnum):
     COPYRIGHT = 0
     FONT_FAMILY = 1
@@ -23,12 +44,6 @@ class NameID(IntEnum):
     FULL_HUMAN_NAME = 4
     VERSION = 5
     POSTSCRIPT_NAME = 6
-
-try:
-    # bdflib will ignore the FACE_NAME property, which we don't want
-    bdflib.model.IGNORABLE_PROPERTIES.remove(b'FACE_NAME')
-except ValueError:
-    pass
 
 
 class Font:
@@ -74,6 +89,7 @@ class Font:
         width = None
         weight_name = None
         relative_weight = None
+        spacing = None
 
         if b'COPYRIGHT' in bdf_font:
             self.copyright = bdf_font[b'COPYRIGHT'].decode()
@@ -86,6 +102,14 @@ class Font:
                 # TODO: warning
                 pass
 
+        # This is the name specified with the FONT keyword, which is usually but not always in XLFD format.
+        if bdf_font.original_font_name:
+            font_name = bdf_font.original_font_name.decode()
+            xlfd_fields = self.parse_xlfd_name_fields(font_name)
+
+            if xlfd_fields:
+                _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, spacing, _, _, _ = xlfd_fields
+
         if b'FACE_NAME' in bdf_font:
             # bdflib will assign the FONT property to FACE_NAME, even if it's an
             # XLFD string. We can detect this and assign other properties based on
@@ -94,7 +118,7 @@ class Font:
             xlfd_fields = self.parse_xlfd_name_fields(face_name_property)
 
             if xlfd_fields:
-                _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, _, _, _, _ = xlfd_fields
+                _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, spacing, _, _, _ = xlfd_fields
             else:
                 # Assume that FACE_NAME was actually specified, so we should
                 # consider it as the canonical human name.
@@ -121,6 +145,9 @@ class Font:
         if b'FONT_NAME' in bdf_font:
             self.postscript_name = bdf_font[b'FONT_NAME'].decode()
 
+        if b'SPACING' in bdf_font:
+            spacing = bdf_font[b'SPACING'].decode()
+
         self.family = self.generate_family(base_family, width, extra_style)
         self.style = self.generate_style(slant_code, weight_name, relative_weight)
 
@@ -133,6 +160,10 @@ class Font:
         if not self.postscript_name:
             self.postscript_name = f"{self.family}-{self.style}".replace(" ", "")
 
+        if spacing and spacing.upper() in {"M", "C"}:
+            self.is_monospace = True
+        else:
+            self.is_monospace = False
 
     def generate_family(self, base_family, width, extra_style):
         regular_widths = {"medium", "normal", "regular"}
@@ -410,7 +441,6 @@ class Font:
         cap_height = self.cap_height * self.pixel_size
 
         # TODO: strikeout size & position
-        # TODO: set achVendorID = None
         # TODO: set win metrics to max bounding box?
         fb.setupOS2(
             version=4,
@@ -430,9 +460,11 @@ class Font:
             sCapHeight=cap_height,
         )
 
+        fixed_pitch = 1 if self.is_monospace else 0
         # TODO: set underline values
-        # TODO: set isFixedPitch?
-        fb.setupPost()
+        fb.setupPost(
+            isFixedPitch=fixed_pitch,
+        )
 
         # Merge adjacent pixel squares and reduce extra points
         removeOverlaps(fb.font)
