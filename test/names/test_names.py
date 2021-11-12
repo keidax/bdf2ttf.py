@@ -1,3 +1,6 @@
+import subprocess
+from fontTools.ttLib.ttFont import TTFont
+from inspect import cleandoc
 from helpers import utils
 
 def test_with_no_names(convert_str):
@@ -379,4 +382,78 @@ def test_numeric_weight_names(convert_str):
         2: "Heavy",
         4: "Family Name Heavy",
         6: "FamilyName-Heavy",
+    })
+
+def test_name_overrides(convert_str):
+    override_font = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 9
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        FAMILY_NAME "Family Name"
+        SETWIDTH_NAME "Condensed"
+        ADD_STYLE_NAME "Extra"
+        WEIGHT_NAME "Semibold"
+        SLANT "RO"
+        FACE_NAME "This is the human name"
+        FONT_NAME "ThisIsThePostScriptName"
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(override_font, {
+        1: "Family Name Condensed Extra",
+        2: "Semibold Reverse Oblique",
+        4: "This is the human name",
+        6: "ThisIsThePostScriptName",
+    })
+
+def test_output_file_name(tmp_path):
+    in_file = tmp_path / "in_file.bdf"
+    in_file.write_text(cleandoc("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 6
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        FAMILY_NAME "Family Name"
+        WEIGHT_NAME "Bold"
+        SLANT "I"
+        FONT_NAME "ThisIsThePostScriptName"
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """))
+
+    process = subprocess.run(
+        f"cd {tmp_path}; python -m bdf2ttf.convert {in_file}",
+        shell=True,
+        stderr=subprocess.STDOUT
+    )
+
+    if process.returncode:
+        pytest.fail(f"failed to convert:\n{capfd.readouterr().out}")
+
+    out_file = tmp_path / "ThisIsThePostScriptName.ttf"
+    assert out_file.exists()
+
+    font = TTFont(out_file)
+
+    utils.assert_font_names(font, {
+        6: "ThisIsThePostScriptName",
     })

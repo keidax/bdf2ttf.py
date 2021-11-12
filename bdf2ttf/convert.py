@@ -24,7 +24,7 @@ bdflib.model.IGNORABLE_PROPERTIES.remove(b'FACE_NAME')
 def bdflib_font_init(self, name, ptSize, xdpi, ydpi):
     self.original_font_name = bytes(name)
     self.properties = {
-            b"FACE_NAME": bytes(name),
+            # b"FACE_NAME": bytes(name),
             b"POINT_SIZE": ptSize,
             b"RESOLUTION_X": xdpi,
             b"RESOLUTION_Y": ydpi,
@@ -44,6 +44,7 @@ class NameID(IntEnum):
     FULL_HUMAN_NAME = 4
     VERSION = 5
     POSTSCRIPT_NAME = 6
+    TRADEMARK = 7
 
 
 class Font:
@@ -92,6 +93,7 @@ class Font:
 
     def build_attributes(self, bdf_font) -> None:
         self.copyright = None
+        self.trademark_notice = None
         self.version = 1.0
         self.human_name = None
         self.postscript_name = None
@@ -106,6 +108,9 @@ class Font:
 
         if b'COPYRIGHT' in bdf_font:
             self.copyright = bdf_font[b'COPYRIGHT'].decode()
+
+        if b'NOTICE' in bdf_font:
+            self.trademark_notice = bdf_font[b'NOTICE'].decode()
 
         if b'FONT_VERSION' in bdf_font:
             version = bdf_font[b'FONT_VERSION'].decode()
@@ -122,6 +127,9 @@ class Font:
 
             if xlfd_fields:
                 _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, spacing, _, _, _ = xlfd_fields
+            else:
+                # TODO: warning
+                pass
 
         if b'FACE_NAME' in bdf_font:
             # bdflib will assign the FONT property to FACE_NAME, even if it's an
@@ -447,6 +455,8 @@ class Font:
 
         if self.copyright:
             names[NameID.COPYRIGHT] = self.copyright
+        if self.trademark_notice:
+            names[NameID.TRADEMARK] = self.trademark_notice
 
         fb.setupNameTable(names)
 
@@ -506,7 +516,6 @@ def convert_bdf(infile, outfile=None, feature_file=None):
     if outfile != None:
         font_filename = outfile
     else:
-        # font_filename = f"{font.fontname}.ttf"
         font_filename = f"{font.postscript_name}.ttf"
 
     # Output the final font
