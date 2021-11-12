@@ -85,3 +85,102 @@ def test_with_simple_glyph(convert_str):
         ('lineTo', ((682, 0),)),
         ('closePath', ())
     ]
+
+def test_default_underline(convert_str):
+    default_underline = convert_str("""
+        STARTFONT 2.1
+        FONT --------------
+        SIZE 6 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 2
+        FONT_ASCENT 3
+        FONT_DESCENT 3
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR bar
+        ENCODING 124
+        SWIDTH 120 0
+        DWIDTH 3 0
+        BBX 1 3 1 0
+        BITMAP
+        8
+        8
+        8
+        ENDCHAR
+        ENDFONT
+        """)
+
+    head = default_underline["head"]
+    assert head.unitsPerEm == 1020
+
+
+    post = default_underline["post"]
+    assert post.underlinePosition == -340
+    assert post.underlineThickness == 170
+
+def test_underline(convert_str):
+    positive_underline_value = convert_str("""
+        STARTFONT 2.1
+        FONT --------------
+        SIZE 6 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 4
+        FONT_ASCENT 3
+        FONT_DESCENT 3
+        UNDERLINE_POSITION 1
+        UNDERLINE_THICKNESS 2
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR bar
+        ENCODING 124
+        SWIDTH 120 0
+        DWIDTH 3 0
+        BBX 1 3 1 0
+        BITMAP
+        8
+        8
+        8
+        ENDCHAR
+        ENDFONT
+        """)
+
+    head = positive_underline_value["head"]
+    assert head.unitsPerEm == 1020
+
+    post = positive_underline_value["post"]
+    assert post.underlinePosition == -170
+    assert post.underlineThickness == 340
+
+
+    negative_underline_value = convert_str("""
+        STARTFONT 2.1
+        FONT --------------
+        SIZE 6 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 4
+        FONT_ASCENT 3
+        FONT_DESCENT 3
+        UNDERLINE_POSITION -1
+        UNDERLINE_THICKNESS 2
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR bar
+        ENCODING 124
+        SWIDTH 120 0
+        DWIDTH 3 0
+        BBX 1 3 1 0
+        BITMAP
+        8
+        8
+        8
+        ENDCHAR
+        ENDFONT
+        """)
+
+    head = negative_underline_value["head"]
+    assert head.unitsPerEm == 1020
+
+
+    post = negative_underline_value["post"]
+    assert post.underlinePosition == -170
+    assert post.underlineThickness == 340

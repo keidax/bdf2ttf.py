@@ -64,12 +64,25 @@ class Font:
 
         self.x_height : int = 0
         self.cap_height : int = 0
+        self.underline_position : int = round(self.descent / 2)
+        self.underline_thickness : int = 1
 
         if b'X_HEIGHT' in bdf_font:
             self.x_height = int(bdf_font[b'X_HEIGHT'])
 
         if b'CAP_HEIGHT' in bdf_font:
             self.cap_height = int(bdf_font[b'CAP_HEIGHT'])
+
+        if b'UNDERLINE_POSITION' in bdf_font:
+            # XLFD documentation says an underline position below the baseline
+            # should be a positive number, but most existing BDF fonts seem to
+            # use negative numbers. We assume underline is always under the
+            # baseline, so treat this as a positive number.
+            self.underline_position = abs(int(bdf_font[b'UNDERLINE_POSITION']))
+
+        if b'UNDERLINE_THICKNESS' in bdf_font:
+            self.underline_thickness = int(bdf_font[b'UNDERLINE_THICKNESS'])
+
 
         # pixel_size is the distance between pseudo-pixels in our outline font, in em
         # coordinates. Make sure it divides evenly into final em size.
@@ -439,8 +452,9 @@ class Font:
 
         x_height = self.x_height * self.pixel_size
         cap_height = self.cap_height * self.pixel_size
+        underline_position = -self.underline_position * self.pixel_size
+        underline_thickness = self.underline_thickness * self.pixel_size
 
-        # TODO: strikeout size & position
         # TODO: set win metrics to max bounding box?
         fb.setupOS2(
             version=4,
@@ -458,12 +472,19 @@ class Font:
 
             sxHeight=x_height,
             sCapHeight=cap_height,
+
+            # We can't infer strikeout position from BDF properties, but
+            # thickness can be matched with the underline thickness.
+            # TODO: should we still try to generate a reasonable value for
+            # yStrikeoutPosition?
+            yStrikeoutSize=underline_thickness,
         )
 
         fixed_pitch = 1 if self.is_monospace else 0
-        # TODO: set underline values
         fb.setupPost(
             isFixedPitch=fixed_pitch,
+            underlineThickness=underline_thickness,
+            underlinePosition=underline_position,
         )
 
         # Merge adjacent pixel squares and reduce extra points
