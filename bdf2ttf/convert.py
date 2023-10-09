@@ -14,6 +14,7 @@ import bdflib.reader
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib.removeOverlaps import removeOverlaps
+from fontTools.feaLib.builder import addOpenTypeFeatures
 
 
 # bdflib will ignore the FACE_NAME property, which we don't want
@@ -510,8 +511,8 @@ def convert_bdf(infile, outfile=None, feature_file=None):
 
     font_builder = font.opentype_font()
 
-    # if feature_file != None:
-    #     font.mergeFeature(feature_file.name)
+    if feature_file != None:
+        addOpenTypeFeatures(font_builder.font, feature_file)
 
     if outfile != None:
         font_filename = outfile
@@ -532,7 +533,7 @@ def main():
             The TTF font file to output. If not specified, will be generated
             based on the font name and weight.
             """)
-    parser.add_argument("-f", "--feature-file", type=argparse.FileType("rb"), help="""
+    parser.add_argument("-f", "--feature-file", type=argparse.FileType("r"), help="""
             Include feature information from an OpenType feature file in the
             final font.
             """)
