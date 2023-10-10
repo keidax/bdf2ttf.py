@@ -2,14 +2,13 @@
 
 [[package]]
 name = "bdflib"
-version = "1.1.3"
+version = "2.0.0"
 description = "Library for working with BDF font files."
 optional = false
 python-versions = "*"
 files = [
-    {file = "bdflib-1.1.3-py2-none-any.whl", hash = "sha256:c62a5eee7c350443465eefdba38f2e11dd6905fc691b6559833e5a3ee3375440"},
-    {file = "bdflib-1.1.3-py3-none-any.whl", hash = "sha256:aa86c7a4d2d3de2d294cab7aff3e21ad5cd82a7f1013fb9b095792ec54acf4fc"},
-    {file = "bdflib-1.1.3.tar.gz", hash = "sha256:aa3f3ad5fb459f8d85fbfb19896116678a77b4c6fd689d3f1ba54bd868337641"},
+    {file = "bdflib-2.0.0-py3-none-any.whl", hash = "sha256:6be05e879a8d3bbeb32e95eb771d2e516d4a0268e478ee189bafe9c6b9dfe5b5"},
+    {file = "bdflib-2.0.0.tar.gz", hash = "sha256:b72402d67827a7fd8fc1648feeb22a9e733c05b19e89f0cfb8580094864dfcd8"},
 ]
 
 [[package]]
@@ -373,4 +372,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8074a084e07bc6ced39e31518a75e8891320cd87b682ba92247cd59458cb1d29"
+content-hash = "f7ab0040201a1d36978339190cf25829f89f70c9343c77048d56a0f10b7f60be"

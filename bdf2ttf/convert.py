@@ -17,26 +17,6 @@ from fontTools.ttLib.removeOverlaps import removeOverlaps
 from fontTools.feaLib.builder import addOpenTypeFeatures
 
 
-# bdflib will ignore the FACE_NAME property, which we don't want
-bdflib.model.IGNORABLE_PROPERTIES.remove(b'FACE_NAME')
-
-# Monkeypatch the bdflib Font class, to support both the original name
-# (specified with the FONT keyword) and the FACE_NAME property.
-def bdflib_font_init(self, name, ptSize, xdpi, ydpi):
-    self.original_font_name = bytes(name)
-    self.properties = {
-            # b"FACE_NAME": bytes(name),
-            b"POINT_SIZE": ptSize,
-            b"RESOLUTION_X": xdpi,
-            b"RESOLUTION_Y": ydpi,
-        }
-    self.glyphs = []
-    self.glyphs_by_codepoint = {}
-    self.comments = []
-
-bdflib.model.Font.__init__ = bdflib_font_init
-
-
 class NameID(IntEnum):
     COPYRIGHT = 0
     FONT_FAMILY = 1
@@ -57,8 +37,7 @@ class Font:
 
     def calculate_sizes(self, bdf_font) -> None:
         # This *should* be the actual vertical size of our font, in pixels
-        self.font_size : int = int(round(
-            bdf_font[b'RESOLUTION_Y'] * bdf_font[b'POINT_SIZE'] / 72.0))
+        self.font_size : int = int(round(bdf_font.ydpi * bdf_font.ptSize / 72.0))
 
         self.ascent : int = int(bdf_font[b'FONT_ASCENT'])
         self.descent : int = int(bdf_font[b'FONT_DESCENT'])
@@ -122,8 +101,8 @@ class Font:
                 pass
 
         # This is the name specified with the FONT keyword, which is usually but not always in XLFD format.
-        if bdf_font.original_font_name:
-            font_name = bdf_font.original_font_name.decode()
+        if bdf_font.name:
+            font_name = bdf_font.name.decode()
             xlfd_fields = self.parse_xlfd_name_fields(font_name)
 
             if xlfd_fields:
@@ -133,17 +112,14 @@ class Font:
                 pass
 
         if b'FACE_NAME' in bdf_font:
-            # bdflib will assign the FONT property to FACE_NAME, even if it's an
-            # XLFD string. We can detect this and assign other properties based on
-            # the XLFD name contents.
+            # Check if FACE_NAME was specified as an XLFD string
             face_name_property = bdf_font[b'FACE_NAME'].decode()
             xlfd_fields = self.parse_xlfd_name_fields(face_name_property)
 
             if xlfd_fields:
                 _, base_family, weight_name, slant_code, width, extra_style, _, _, _, _, spacing, _, _, _ = xlfd_fields
             else:
-                # Assume that FACE_NAME was actually specified, so we should
-                # consider it as the canonical human name.
+                # FACE_NAME was specified as the canonical human name
                 self.human_name = face_name_property
 
         if b'FAMILY_NAME' in bdf_font:
