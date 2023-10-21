@@ -1,3 +1,6 @@
+import subprocess
+from fontTools.ttLib.ttFont import TTFont
+from inspect import cleandoc
 from helpers import utils
 
 def test_with_no_names(convert_str):
@@ -9,7 +12,13 @@ def test_with_no_names(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
 
@@ -30,7 +39,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(plain_font, {
@@ -51,7 +66,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(regular_font, {
@@ -71,7 +92,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(bold_font, {
@@ -92,7 +119,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(italic_font, {
@@ -113,7 +146,13 @@ def test_with_basic_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(bold_italic_font, {
@@ -135,7 +174,13 @@ def test_with_full_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(extra_styles_font, {
@@ -158,7 +203,13 @@ def test_with_full_styles(convert_str):
         FONT_ASCENT 1
         FONT_DESCENT 0
         ENDPROPERTIES
-        CHARS 0
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
         ENDFONT
         """)
     utils.assert_font_names(all_styles_font, {
@@ -166,4 +217,243 @@ def test_with_full_styles(convert_str):
         2: "Semibold Reverse Oblique",
         4: "Family Name Condensed Extra Semibold Reverse Oblique",
         6: "FamilyNameCondensedExtra-SemiboldReverseOblique",
+    })
+
+def test_numeric_weight_names(convert_str):
+    relative_weight_0 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 0
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_0, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_20 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 20
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_20, {
+        1: "Family Name",
+        2: "Extra Light",
+        4: "Family Name Extra Light",
+        6: "FamilyName-ExtraLight",
+    })
+
+    relative_weight_50 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 50
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_50, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_70 = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 70
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_70, {
+        1: "Family Name",
+        2: "Bold",
+        4: "Family Name Bold",
+        6: "FamilyName-Bold",
+    })
+
+    relative_weight_invalid = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 5
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 77
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(relative_weight_invalid, {
+        1: "Family Name",
+        2: "Regular",
+        4: "Family Name",
+        6: "FamilyName-Regular",
+    })
+
+    relative_weight_and_weight_name = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 6
+        FAMILY_NAME "Family Name"
+        RELATIVE_WEIGHT 10
+        WEIGHT_NAME "Heavy"
+        SLANT "R"
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+
+    utils.assert_font_names(relative_weight_and_weight_name, {
+        1: "Family Name",
+        2: "Heavy",
+        4: "Family Name Heavy",
+        6: "FamilyName-Heavy",
+    })
+
+def test_name_overrides(convert_str):
+    override_font = convert_str("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 9
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        FAMILY_NAME "Family Name"
+        SETWIDTH_NAME "Condensed"
+        ADD_STYLE_NAME "Extra"
+        WEIGHT_NAME "Semibold"
+        SLANT "RO"
+        FACE_NAME "This is the human name"
+        FONT_NAME "ThisIsThePostScriptName"
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """)
+    utils.assert_font_names(override_font, {
+        1: "Family Name Condensed Extra",
+        2: "Semibold Reverse Oblique",
+        4: "This is the human name",
+        6: "ThisIsThePostScriptName",
+    })
+
+def test_output_file_name(tmp_path):
+    in_file = tmp_path / "in_file.bdf"
+    in_file.write_text(cleandoc("""
+        STARTFONT 2.1
+        SIZE 1 72 72
+        FONTBOUNDINGBOX 0 0 0 0
+        STARTPROPERTIES 6
+        FONT_ASCENT 1
+        FONT_DESCENT 0
+        FAMILY_NAME "Family Name"
+        WEIGHT_NAME "Bold"
+        SLANT "I"
+        FONT_NAME "ThisIsThePostScriptName"
+        ENDPROPERTIES
+        CHARS 1
+        STARTCHAR space
+        ENCODING 32
+        DWIDTH 1 0
+        BBX 0 0 0 0
+        BITMAP
+        ENDCHAR
+        ENDFONT
+        """))
+
+    process = subprocess.run(
+        f"cd {tmp_path}; python -m bdf2ttf.convert {in_file}",
+        shell=True,
+        stderr=subprocess.STDOUT
+    )
+
+    if process.returncode:
+        pytest.fail(f"failed to convert:\n{capfd.readouterr().out}")
+
+    out_file = tmp_path / "ThisIsThePostScriptName.ttf"
+    assert out_file.exists()
+
+    font = TTFont(out_file)
+
+    utils.assert_font_names(font, {
+        6: "ThisIsThePostScriptName",
     })

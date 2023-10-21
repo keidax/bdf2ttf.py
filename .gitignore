@@ -1,5 +1,7 @@
 *.pyc
 
+.coverage
+
 # Build files
 *.egg-info/
 build/
